@@ -46,16 +46,17 @@ public class TrainerRole implements Role {
     }
 
     public boolean registerMemberForClass(String memberID, String classID, LocalDate registrationDate) {
-        if (classDatabase.contains(classID) && classDatabase.getRecord(classID).getAvailableSeats() > 0) {
+        Class record = (Class) classDatabase.getRecord(classID);
+        if (classDatabase.contains(classID) && record.getAvailableSeats() > 0) {
             registrationDatabase.insertRecord(registrationDatabase.createRecordFrom(memberID + ", " + classID + ", " + registrationDate + ", " + "active"));
-            classDatabase.getRecord(classID).setAvailableSeats(classDatabase.getRecord(classID).getAvailableSeats() - 1);
+            record.setAvailableSeats(record.getAvailableSeats() - 1);
             return true;
         }
         if (!classDatabase.contains(classID)) {
             System.out.println("Class does not exist.");
             return false;
         }
-        if (!(classDatabase.getRecord(classID).getAvailableSeats() > 0)) {
+        if (!(record.getAvailableSeats() > 0)) {
             System.out.println("No seats available in class.");
             return false;
         }
@@ -63,13 +64,15 @@ public class TrainerRole implements Role {
     }
 
     public boolean cancelRegistration(String memberID, String classID) {
+        MemberClassRegistration recordM = (MemberClassRegistration)registrationDatabase.getRecord(memberID.concat(classID));
+        Class recordC = (Class)classDatabase.getRecord(classID);
         if (registrationDatabase.contains(memberID.concat(classID))) {
-            long difference = Math.abs(ChronoUnit.DAYS.between(registrationDatabase.getRecord(memberID.concat(classID)).getRegistrationDate(), LocalDate.now()));
+            long difference = Math.abs(ChronoUnit.DAYS.between(recordM.getRegistrationDate(), LocalDate.now()));
             String str = registrationDatabase.getRecord(memberID.concat(classID)).lineRepresentation();
             String[] divided = str.split(", ");
             if (difference <= 3 && "active".equals(divided[3])) {
-                registrationDatabase.getRecord(memberID.concat(classID)).setRegistrationStatus("canceled");
-                classDatabase.getRecord(classID).setAvailableSeats(classDatabase.getRecord(classID).getAvailableSeats() + 1);
+                recordM.setRegistrationStatus("canceled");
+                recordC.setAvailableSeats(recordC.getAvailableSeats() + 1);
                 System.out.println("Refund issued to member: " + memberID);
                 return true;
             }
